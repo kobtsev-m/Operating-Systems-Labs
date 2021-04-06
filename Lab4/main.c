@@ -1,6 +1,7 @@
 #include <stdio.h>
 #include <malloc.h>
 #include <string.h>
+#include <limits.h>
 
 typedef struct ListNode ListNode;
 
@@ -20,8 +21,9 @@ ListNode* initList() {
 
 void addNode(ListNode **head, char *value) {
     ListNode *node = (ListNode*) malloc(sizeof(ListNode));
-    node->value = (char*) malloc(sizeof(char) * (strlen(value)+1));
-    strcpy(node->value, value);
+    int stringLength = strnlen(value, LINE_MAX) + 1;
+    node->value = (char*) malloc(sizeof(char) * stringLength);
+    strncpy(node->value, value, stringLength);
     node->next = *head;
     node->prev = NULL;
     (*head)->prev = node;
@@ -38,13 +40,13 @@ void freeList(ListNode *head) {
 }
 
 int main() {
-    char *line = (char*) malloc(sizeof(char) * BUFSIZ);
+    char *line = (char*) malloc(sizeof(char) * LINE_MAX);
 
     ListNode *head = initList();
     ListNode *tail = head;
 
     while (1) {
-        char *res = fgets(line, sizeof(line), stdin);
+        char *res = fgets(line, LINE_MAX, stdin);
         if (line[0] == '.' || res == NULL) {
             break;
         }

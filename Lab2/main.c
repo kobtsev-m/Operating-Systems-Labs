@@ -1,4 +1,3 @@
-#include <sys/types.h>
 #include <stdio.h>
 #include <time.h>
 #include <stdlib.h>
@@ -11,7 +10,7 @@ int main() {
 
     // Установка переменной окружения TZ для последующего опеределения
     // времени в этом часовом поясе
-    int res = putenv("TZ=America/California");
+    int res = putenv("TZ=America/Los_Angeles");
     // Проверка результата выполнения
     if (res == -1) {
         perror("Error while setting Time Zone");
@@ -36,7 +35,7 @@ int main() {
     printf("%d/%d/%02d %d:%02d %s\n",
            sp->tm_mon + 1,
            sp->tm_mday,
-           sp->tm_year,
+           sp->tm_year + 1900,
            sp->tm_hour,
            sp->tm_min,
            tzname[sp->tm_isdst]);
