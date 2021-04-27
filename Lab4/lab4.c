@@ -50,24 +50,26 @@ int addNode(ListNode **head, char *value, int valueLen) {
 }
 
 void freeList(ListNode *head) {
-    ListNode *tmp;
+    ListNode *tmpNode;
     while (head != NULL) {
-        tmp = head;
+        tmpNode = head;
         head = head->next;
-        free(tmp);
+        free(tmpNode);
     }
 }
 
 int readLine(char **line, int *lineLen) {
     char *fgetsRes = fgets(*line, BUF_SIZE, stdin);
-    *lineLen = (int)strnlen(*line, BUF_SIZE);
+    char *tmpLine;
     int k = 2;
+    *lineLen = (int)strnlen(*line, BUF_SIZE);
     while ((*line)[(*lineLen) - 1] != LINE_END_SYMBOL && fgetsRes != NULL) {
-        *line = realloc(*line, sizeof(char) * BUF_SIZE*k);
-        if (*line == NULL) {
+        tmpLine = realloc(*line, sizeof(char) * BUF_SIZE*k);
+        if (tmpLine == NULL) {
             perror("Memory reallocation error on line oversize");
             return MEMORY_ALLOCATION_ERROR;
         }
+        *line = tmpLine;
         fgetsRes = fgets(&(*line)[*lineLen], BUF_SIZE*k - (*lineLen), stdin);
         *lineLen = (int)strnlen(*line, BUF_SIZE*k);
         k *= 2;
@@ -102,6 +104,7 @@ int main() {
         int readLineStatus = readLine(&line, &lineLen);
         if (readLineStatus == MEMORY_ALLOCATION_ERROR) {
             freeList(head);
+            free(line);
             return MEMORY_ALLOCATION_ERROR;
         }
         if (line[0] == EXIT_SYMBOL || readLineStatus == EOF_STATUS) {

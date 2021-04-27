@@ -2,6 +2,9 @@
 #include <time.h>
 #include <stdlib.h>
 
+#define SUCCESS_STATUS
+#define PUTENV_ERROR 1
+
 int main() {
     // Создание переменной типа time_t (числовой тип из библотеки time.h)
     time_t now;
@@ -14,7 +17,7 @@ int main() {
     // Проверка результата выполнения
     if (res == -1) {
         perror("Error while setting Time Zone");
-        return 1;
+        return PUTENV_ERROR;
     }
 
     // Запись текущего времени в переменную now - значение в секундах, считая
@@ -45,5 +48,5 @@ int main() {
     // tzname - массив строк из 2 элементов, где мы по соответсвующему
     // флагу isdst получаем строку с инфорамцией о переходе на летнее время
 
-    return 0;
+    return SUCCESS_STATUS;
 }

@@ -1,7 +1,15 @@
 #include <unistd.h>
 #include <stdio.h>
 
+#define SUCCESS_STATUS 0
+#define FILE_OPEN_ERROR 1
+#define SETUID_ERROR 2
+
 int main(int argc, char *argv[]) {
+
+    if (argc != 2) {
+        printf("Wrong arguments number");
+    }
 
     // Создание указателя на файл
     FILE *file;
@@ -17,7 +25,7 @@ int main(int argc, char *argv[]) {
     file = fopen(argv[1], "r");
     if (file == NULL) {
         perror("Error on first file open");
-        return 1;
+        return FILE_OPEN_ERROR;
     }
     fclose(file);
 
@@ -25,7 +33,7 @@ int main(int argc, char *argv[]) {
     int res = setuid(getuid());
     if (res == -1) {
         perror("Error on setuid");
-        return 2;
+        return SETUID_ERROR;
     }
 
     // Вывод идентификаторов после setuid
@@ -34,10 +42,10 @@ int main(int argc, char *argv[]) {
     // Вторая попытка чтения файла
     file = fopen(argv[1], "r");
     if (file == NULL) {
-        perror("Error on first file open");
-        return 3;
+        perror("Error on second file open");
+        return FILE_OPEN_ERROR;
     }
     fclose(file);
 
-    return 0;
+    return SUCCESS_STATUS;
 }
