@@ -2,13 +2,15 @@
 #include <stdio.h>
 
 #define SUCCESS_STATUS 0
-#define FILE_OPEN_ERROR 1
-#define SETUID_ERROR 2
+#define WRONG_ARGUMENTS_NUMBER_ERROR 1
+#define FILE_OPEN_ERROR 2
+#define SETUID_ERROR 3
 
 int main(int argc, char *argv[]) {
 
     if (argc != 2) {
         printf("Wrong arguments number");
+        return WRONG_ARGUMENTS_NUMBER_ERROR;
     }
 
     // Создание указателя на файл
