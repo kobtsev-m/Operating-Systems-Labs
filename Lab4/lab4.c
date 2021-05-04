@@ -1,6 +1,7 @@
 #include <stdio.h>
 #include <malloc.h>
 #include <string.h>
+#include <stdbool.h>
 
 #define BUF_SIZE 100
 #define EXIT_SYMBOL '.'
@@ -21,7 +22,7 @@ struct ListNode {
 ListNode* initList() {
     ListNode *head = (ListNode*) malloc(sizeof(ListNode));
     if (head == NULL) {
-        perror("Memory allocation error on head node creation");
+        perror("Error on head node creation");
         return NULL;
     }
     head->value = NULL;
@@ -33,12 +34,12 @@ ListNode* initList() {
 int addNode(ListNode **head, char *value, int valueLen) {
     ListNode *node = (ListNode*) malloc(sizeof(ListNode));
     if (node == NULL) {
-        perror("Memory allocation error on node creation");
+        perror("Error on node creation");
         return MEMORY_ALLOCATION_ERROR;
     }
     node->value = (char*) malloc(sizeof(char) * valueLen);
     if (node->value == NULL) {
-        perror("Memory allocation error on line copy creation");
+        perror("Error on line copy creation");
         return MEMORY_ALLOCATION_ERROR;
     }
     strncpy(node->value, value, valueLen);
@@ -59,62 +60,64 @@ void freeList(ListNode *head) {
 }
 
 int readLine(char **line, int *lineLen) {
-    char *fgetsRes = fgets(*line, BUF_SIZE, stdin);
-    char *tmpLine;
-    int k = 2;
-    *lineLen = (int)strnlen(*line, BUF_SIZE);
-    while ((*line)[(*lineLen) - 1] != LINE_END_SYMBOL && fgetsRes != NULL) {
-        tmpLine = realloc(*line, sizeof(char) * BUF_SIZE*k);
+    char *tmpLine, *fgetsRes;
+    char endSymbol;
+    *line = NULL;
+    *lineLen = 0;
+    do {
+        // Выделение / перевыделение памяти
+        tmpLine = (char*) realloc(*line, sizeof(char) * (*lineLen + BUF_SIZE));
         if (tmpLine == NULL) {
-            perror("Memory reallocation error on line oversize");
+            perror("Error on line realloc");
             return MEMORY_ALLOCATION_ERROR;
         }
         *line = tmpLine;
-        fgetsRes = fgets(&(*line)[*lineLen], BUF_SIZE*k - (*lineLen), stdin);
-        *lineLen = (int)strnlen(*line, BUF_SIZE*k);
-        k *= 2;
-    }
-    if (fgetsRes == NULL) {
-        return EOF_STATUS;
-    }
+        // Чтение строки из входного потока
+        fgetsRes = fgets(&(*line)[*lineLen], BUF_SIZE, stdin);
+        if (fgetsRes == NULL) {
+            printf("Unexpected file end");
+            return EOF_STATUS;
+        }
+        // Запись в переменную размера строки
+        *lineLen = (int)strnlen(*line, *lineLen + BUF_SIZE);
+        // Запись в переменную последнего символа строки
+        endSymbol = (*line)[(*lineLen) - 1];
+
+    } while (endSymbol != LINE_END_SYMBOL);
+
     return SUCCESS_STATUS;
 }
 
 int main() {
     // Объявление указателя на строку, в которую будут
     // записываться данные из входного потока
-    char *line = (char*) malloc(sizeof(char) * BUF_SIZE);
-    if (line == NULL) {
-        perror("Memory allocation error on line init");
-        return MEMORY_ALLOCATION_ERROR;
-    }
-    int lineLen = 0;
+    char *line;
+    int lineLen;
 
     // Создание указателей на начало и конец списка,
     // чтобы можно было обойти список в обратном порядке
     ListNode *head = initList();
     if (head == NULL) {
-        free(line);
         return MEMORY_ALLOCATION_ERROR;
     }
     ListNode *tail = head;
 
     // Построчное чтение из входного потока, пока не дойдём до символа '.'
-    while (1) {
+    while (true) {
         int readLineStatus = readLine(&line, &lineLen);
-        if (readLineStatus == MEMORY_ALLOCATION_ERROR) {
+        if (readLineStatus != SUCCESS_STATUS) {
             freeList(head);
             free(line);
-            return MEMORY_ALLOCATION_ERROR;
+            return readLineStatus;
         }
-        if (line[0] == EXIT_SYMBOL || readLineStatus == EOF_STATUS) {
+        if (line[0] == EXIT_SYMBOL) {
             break;
         }
         int addNodeStatus = addNode(&head, line, lineLen);
-        if (addNodeStatus == MEMORY_ALLOCATION_ERROR) {
+        if (addNodeStatus != SUCCESS_STATUS) {
             freeList(head);
             free(line);
-            return MEMORY_ALLOCATION_ERROR;
+            return addNodeStatus;
         }
     }
 
