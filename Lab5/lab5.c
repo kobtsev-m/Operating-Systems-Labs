@@ -26,7 +26,7 @@
 #define INPUT_SIZE (100)
 #define BUF_SIZE (100)
 #define TABLE_SIZE (256)
-#define STOP_LINE_IDX (0)
+#define STOP_IDX (0)
 
 
 int fillTable(int fileDescriptor, int *linesOffsets, int *linesLen, int *linesNumber) {
@@ -62,8 +62,8 @@ int getLineIdx(long long int *lineIdx, int linesNumber) {
     char prependText[27] = "Please, enter line number: ";
     char inputValue[INPUT_SIZE];
 
-    int writeInFileRes = write(STDOUT_FILENO, prependText, 27);
-    if (writeInFileRes == STDOUT_WRITE_ERROR_VALUE) {
+    int writeRes = write(STDOUT_FILENO, prependText, 27);
+    if (writeRes == STDOUT_WRITE_ERROR_VALUE) {
         perror("Error on printing message for user");
         return STDOUT_WRITE_ERROR;
     }
@@ -126,7 +126,7 @@ int getLines(int fileDescriptor, int *linesOffsets, int *linesLen, int linesNumb
         if (getLineIdxRes == INVALID_VALUE_ERROR) {
             continue;
         }
-        if (lineIdx == STOP_LINE_IDX) {
+        if (lineIdx == STOP_IDX) {
             break;
         }
         if (linesLen[lineIdx] != 0) {
