@@ -3,21 +3,19 @@
 #include <string.h>
 #include <stdbool.h>
 
-#define BUF_SIZE 100
-#define EXIT_SYMBOL '.'
-#define LINE_END_SYMBOL '\n'
+#define SUCCESS_STATUS (0)
+#define MEMORY_ALLOCATION_ERROR (1)
+#define EOF_STATUS (2)
 
-#define SUCCESS_STATUS 0
-#define MEMORY_ALLOCATION_ERROR 1
-#define EOF_STATUS 2
+#define LINE_END_SYMBOL ('\n')
+#define EXIT_SYMBOL ('.')
+#define BUF_SIZE (100)
 
-typedef struct ListNode ListNode;
-
-struct ListNode {
+typedef struct ListNode {
     char *value;
-    ListNode *next;
-    ListNode *prev;
-};
+    struct ListNode *next;
+    struct ListNode *prev;
+} ListNode;
 
 ListNode* initList() {
     ListNode *head = (ListNode*) malloc(sizeof(ListNode));

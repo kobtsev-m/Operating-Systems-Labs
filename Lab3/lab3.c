@@ -1,10 +1,11 @@
 #include <unistd.h>
 #include <stdio.h>
 
-#define SUCCESS_STATUS 0
-#define WRONG_ARGUMENTS_NUMBER_ERROR 1
-#define FILE_OPEN_ERROR 2
-#define SETUID_ERROR 3
+#define SUCCESS_STATUS (0)
+#define WRONG_ARGUMENTS_NUMBER_ERROR (1)
+#define FILE_OPEN_ERROR (2)
+#define SETUID_ERROR (3)
+#define SETUID_ERROR_VALUE (-1)
 
 int main(int argc, char *argv[]) {
 
@@ -16,11 +17,7 @@ int main(int argc, char *argv[]) {
     // Создание указателя на файл
     FILE *file;
 
-    // Вывод действительного и эффективного id пользователя
-    // Действительный id - id пользователя, вызвавшего процесс
-    // Эффективный id - обычно совпадает c действительным, используется для проверки
-    // прав доступа, может отличаться от дествительного, если установлен бит setuid
-    // на исполняемом файле и файл не принадлежит пользователю
+    // Вывод действительного и эффективного идентификаторов процесса
     printf("Real user id: %d\nEffective user id: %d\n", getuid(), geteuid());
 
     // Первая попытка чтения файла
@@ -31,14 +28,14 @@ int main(int argc, char *argv[]) {
     }
     fclose(file);
 
-    // Устанавливка действительного id владельца текущего процесса
-    int res = setuid(getuid());
-    if (res == -1) {
+    // Установка эффективого индентификатора равным действительному
+    int setuidRes = setuid(getuid());
+    if (setuidRes == SETUID_ERROR_VALUE) {
         perror("Error on setuid");
         return SETUID_ERROR;
     }
 
-    // Вывод идентификаторов после setuid
+    // Вывод идентификаторов после использования функции setuid
     printf("New real user id: %d\nNew effective user id: %d\n", getuid(), geteuid());
 
     // Вторая попытка чтения файла

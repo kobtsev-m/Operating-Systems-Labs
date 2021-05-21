@@ -2,8 +2,9 @@
 #include <time.h>
 #include <stdlib.h>
 
-#define SUCCESS_STATUS
-#define PUTENV_ERROR 1
+#define SUCCESS_STATUS (0)
+#define PUTENV_ERROR (1)
+#define PUTENV_ERROR_VALUE (-1)
 
 int main() {
     // Создание переменной типа time_t (числовой тип из библотеки time.h)
@@ -13,9 +14,8 @@ int main() {
 
     // Установка переменной окружения TZ для последующего опеределения
     // времени в этом часовом поясе
-    int res = putenv("TZ=America/Los_Angeles");
-    // Проверка результата выполнения
-    if (res == -1) {
+    int putenvRes = putenv("TZ=America/Los_Angeles");
+    if (putenvRes == PUTENV_ERROR_VALUE) {
         perror("Error while setting Time Zone");
         return PUTENV_ERROR;
     }
@@ -35,18 +35,15 @@ int main() {
     sp = localtime(&now);
 
     // Вывод времени на основе полей полученной структуры
-    printf("%d/%d/%02d %d:%02d %s\n",
-           sp->tm_mon + 1,
-           sp->tm_mday,
-           sp->tm_year + 1900,
-           sp->tm_hour,
-           sp->tm_min,
-           tzname[sp->tm_isdst]);
-
-    // sp->tm_isdst - это флаг перехода на летнее время
-    // (больше 0 - переходим, 0 - не переходим, меньше 0 - не опеределено)
-    // tzname - массив строк из 2 элементов, где мы по соответсвующему
-    // флагу isdst получаем строку с инфорамцией о переходе на летнее время
+    printf(
+        "%d/%d/%02d %d:%02d %s\n",
+        sp->tm_mon + 1,
+        sp->tm_mday,
+        sp->tm_year + 1900,
+        sp->tm_hour,
+        sp->tm_min,
+        tzname[sp->tm_isdst]
+    );
 
     return SUCCESS_STATUS;
 }
