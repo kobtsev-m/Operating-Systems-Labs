@@ -9,8 +9,9 @@
 #define EOF_STATUS (3)
 
 #define LINE_END_SYMBOL ('\n')
+#define TERMINAL_ZERO ('\0')
 #define EXIT_SYMBOL ('.')
-#define BUF_SIZE (20)
+#define BUF_SIZE (100)
 
 typedef struct ListNode {
     char *value;
@@ -44,7 +45,7 @@ int addNode(ListNode **head, char *value, int valueLen) {
     }
     // Копирование значения из введённой строки
     strncpy(node->value, value, valueLen);
-    node->value[valueLen] = '\0';
+    node->value[valueLen] = TERMINAL_ZERO;
     // Переопределение указателей
     node->next = *head;
     node->prev = NULL;
@@ -54,31 +55,29 @@ int addNode(ListNode **head, char *value, int valueLen) {
 }
 
 int readLine(char **line, int *lineLen) {
-    // Очистка предыдущих значений
-    memset(*line, '\0', sizeof(char) * (*lineLen));
-    *lineLen = 0;
-
+    int idx = 0;
     while (true) {
         // Чтение строки из входного потока
-        char *fgetsRes = fgets(&(*line)[*lineLen], BUF_SIZE, stdin);
+        char *fgetsRes = fgets(&(*line)[idx], BUF_SIZE, stdin);
         if (fgetsRes == NULL) {
-            printf("Unexpected file end");
+            fprintf(stderr, "Unexpected file end");
             return EOF_STATUS;
         }
         // Запись в переменную текущего размера строки
-        *lineLen = (int) strnlen(*line, *lineLen + BUF_SIZE);
+        idx = (int) strnlen(*line, idx + BUF_SIZE);
         // Проверка на конец строки
-        if ((*line)[*lineLen - 1] == LINE_END_SYMBOL) {
+        if ((*line)[idx - 1] == LINE_END_SYMBOL) {
             break;
         }
         // Перевыделение памяти под строку
-        char *tmpLine = (char*) realloc(*line, sizeof(char) * (*lineLen + BUF_SIZE));
+        char *tmpLine = (char*) realloc(*line, sizeof(char) * (idx + BUF_SIZE));
         if (tmpLine == NULL) {
             perror("Error on line realloc");
             return MEMORY_REALLOCATION_ERROR;
         }
         *line = tmpLine;
     }
+    *lineLen = idx;
     return SUCCESS_STATUS;
 }
 
@@ -100,7 +99,7 @@ int main() {
         perror("Error on line initialization");
         return MEMORY_ALLOCATION_ERROR;
     }
-    int lineLen = 0;
+    int lineLen;
 
     // Создание указателей на начало и конец списка
     ListNode *head, *tail;

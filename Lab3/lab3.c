@@ -10,7 +10,7 @@
 int main(int argc, char *argv[]) {
 
     if (argc != 2) {
-        printf("Wrong arguments number");
+        fprintf(stderr, "Wrong arguments number");
         return WRONG_ARGUMENTS_NUMBER_ERROR;
     }
 
