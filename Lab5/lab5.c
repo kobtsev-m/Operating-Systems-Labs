@@ -64,10 +64,10 @@ int convertStrToLineIdx(char *str, int strSize, long long *lineIdx, int linesTot
     }
 
     errno = 0;
-    char *end = NULL;
-    *lineIdx = strtoll(str, &end, DECIMAL_SYSTEM);
+    char *endPtr = NULL;
+    *lineIdx = strtoll(str, &endPtr, DECIMAL_SYSTEM);
 
-    if (strnlen(end, strSize) != 0) {
+    if (strnlen(endPtr, strSize) != 0) {
         fprintf(stderr, "Invalid number: string need to contain only digits\n");
         return INVALID_VALUE_ERROR;
     }
@@ -83,11 +83,12 @@ int convertStrToLineIdx(char *str, int strSize, long long *lineIdx, int linesTot
 }
 
 int getLineIdx(long long *lineIdx, int linesTotal) {
-    char prependText[27] = "Please, enter line number: ";
+    char askForNumberText[27] = "Please, enter line number: ";
     char *inputValue = (char*) malloc(sizeof(char) * BUF_SIZE);
+    memset(inputValue, TERMINAL_ZERO, sizeof(char) * BUF_SIZE);
     int inputIdx = 0;
 
-    int writeRes = write(STDOUT_FILENO, prependText, 27);
+    int writeRes = write(STDOUT_FILENO, askForNumberText, 27);
     if (writeRes == STDOUT_WRITE_ERROR_VALUE) {
         perror("Error on printing message for user");
         return STDOUT_WRITE_ERROR;
@@ -110,6 +111,7 @@ int getLineIdx(long long *lineIdx, int linesTotal) {
         }
         inputValue = tmp;
     }
+
     int convertRes = convertStrToLineIdx(inputValue, inputIdx, lineIdx, linesTotal);
     free(inputValue);
 
@@ -176,7 +178,7 @@ int getLines(int fileDescriptor, int *linesOffsets, int *linesLen, int linesTota
 int main(int argc, char *argv[]) {
 
     if (argc != 2) {
-        fprintf(stderr, "Wrong arguments number");
+        fprintf(stderr, "Wrong arguments number\n");
         return WRONG_ARGUMENTS_NUMBER_ERROR;
     }
 
