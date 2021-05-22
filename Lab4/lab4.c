@@ -60,7 +60,7 @@ int readLine(char **line, int *lineLen) {
         // Чтение строки из входного потока
         char *fgetsRes = fgets(&(*line)[idx], BUF_SIZE, stdin);
         if (fgetsRes == NULL) {
-            fprintf(stderr, "Unexpected file end");
+            fprintf(stderr, "Unexpected file end\n");
             return EOF_STATUS;
         }
         // Запись в переменную текущего размера строки
@@ -70,12 +70,12 @@ int readLine(char **line, int *lineLen) {
             break;
         }
         // Перевыделение памяти под строку
-        char *tmpLine = (char*) realloc(*line, sizeof(char) * (idx + BUF_SIZE));
-        if (tmpLine == NULL) {
+        char *tmp = (char*) realloc(*line, sizeof(char) * (idx + BUF_SIZE));
+        if (tmp == NULL) {
             perror("Error on line realloc");
             return MEMORY_REALLOCATION_ERROR;
         }
-        *line = tmpLine;
+        *line = tmp;
     }
     *lineLen = idx;
     return SUCCESS_STATUS;
