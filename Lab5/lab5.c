@@ -26,16 +26,22 @@
 #define LINE_END_SYMBOL ('\n')
 #define TERMINAL_ZERO ('\0')
 #define DECIMAL_SYSTEM (10)
-#define TABLE_SIZE (256)
+#define INIT_TABLE_SIZE (100)
 #define BUF_SIZE (100)
 #define STOP_IDX (0)
 
+typedef struct TableRow {
+    int length;
+    int offset;
+} TableRow;
 
-int fillTable(int fileDescriptor, int *linesOffsets, int *linesLen, int *linesTotal) {
+int fillTable(int fileDescriptor, TableRow **linesTable, int *linesTotal) {
     char buffer[BUF_SIZE];
-    int bufferSize =  BUF_SIZE;
-    int currentOffset = 0;
+    int bufferSize = BUF_SIZE;
     int lineIdx = 1;
+    int linesLimit = *linesTotal;
+    int currLen = 0;
+    int totalOffset = 0;
 
     while (bufferSize != 0) {
         bufferSize = read(fileDescriptor, buffer, BUF_SIZE);
@@ -44,16 +50,26 @@ int fillTable(int fileDescriptor, int *linesOffsets, int *linesLen, int *linesTo
             return FILE_READ_ERROR;
         }
         for (int i = 0; i < bufferSize; ++i) {
-            linesLen[lineIdx]++;
-            currentOffset++;
+            currLen++;
+            totalOffset++;
             if (buffer[i] == LINE_END_SYMBOL) {
-                linesOffsets[lineIdx] = currentOffset - linesLen[lineIdx];
+                (*linesTable)[lineIdx].length = currLen;
+                (*linesTable)[lineIdx].offset = totalOffset - currLen;
                 lineIdx++;
+                currLen = 0;
+            }
+            if (lineIdx == linesLimit) {
+                linesLimit *= 2;
+                TableRow *tmp = (TableRow*) realloc(*linesTable, sizeof(TableRow) * linesLimit);
+                if (tmp == NULL) {
+                    perror("Error on lines table realloc");
+                    return MEMORY_REALLOCATION_ERROR;
+                }
+                *linesTable = tmp;
             }
         }
     }
-    *linesTotal = lineIdx;
-
+    *linesTotal = lineIdx - 1;
     return SUCCESS_STATUS;
 }
 
@@ -85,7 +101,6 @@ int convertStrToLineIdx(char *str, int strSize, long long *lineIdx, int linesTot
 int getLineIdx(long long *lineIdx, int linesTotal) {
     char askForNumberText[27] = "Please, enter line number: ";
     char *inputValue = (char*) malloc(sizeof(char) * BUF_SIZE);
-    memset(inputValue, TERMINAL_ZERO, sizeof(char) * BUF_SIZE);
     int inputIdx = 0;
 
     int writeRes = write(STDOUT_FILENO, askForNumberText, 27);
@@ -99,12 +114,12 @@ int getLineIdx(long long *lineIdx, int linesTotal) {
             perror("Error on reading line number");
             return FILE_READ_ERROR;
         }
-        inputIdx = (int) strnlen(inputValue, inputIdx + BUF_SIZE);
+        inputIdx += readRes;
         if (inputValue[inputIdx - 1] == LINE_END_SYMBOL) {
             inputValue[inputIdx - 1] = TERMINAL_ZERO;
             break;
         }
-        char *tmp = (char*) realloc(inputValue, sizeof(char) * (inputIdx + BUF_SIZE));
+        char *tmp = (char*)realloc(inputValue, sizeof(char) * (inputIdx + BUF_SIZE));
         if (tmp == NULL) {
             perror("Error on realloc for input value");
             return MEMORY_REALLOCATION_ERROR;
@@ -121,7 +136,7 @@ int getLineIdx(long long *lineIdx, int linesTotal) {
 int readLineFromFile(int fileDescriptor, char *line, int currOffset, int currLen) {
     int lseekRes = lseek(fileDescriptor, currOffset, SEEK_SET);
     if (lseekRes == LSEEK_ERROR_VALUE) {
-        perror("Error on lseek");
+        perror("Error on lssek while printing sigle line");
         return LSEEK_ERROR;
     }
     int readRes = read(fileDescriptor, line, currLen);
@@ -141,7 +156,20 @@ int printLine(char* line, int currLen) {
     return SUCCESS_STATUS;
 }
 
-int getLines(int fileDescriptor, int *linesOffsets, int *linesLen, int linesTotal) {
+int getCurrLine(int fileDescriptor, int currOffset, int currLen) {
+    char line[currLen];
+    int readLineRes = readLineFromFile(fileDescriptor, line, currOffset, currLen);
+    if (readLineRes != SUCCESS_STATUS) {
+        return readLineRes;
+    }
+    int printLineRes = printLine(line, currLen);
+    if (printLineRes != SUCCESS_STATUS) {
+        return printLineRes;
+    }
+    return SUCCESS_STATUS;
+}
+
+int getLines(int fileDescriptor, TableRow *linesTable, int linesTotal) {
 
     long long lineIdx;
 
@@ -156,20 +184,13 @@ int getLines(int fileDescriptor, int *linesOffsets, int *linesLen, int linesTota
         if (lineIdx == STOP_IDX) {
             break;
         }
-        if (linesLen[lineIdx] == 0) {
-            continue;
-        }
-        int currOffset = linesOffsets[lineIdx];
-        int currLen = linesLen[lineIdx];
-        char line[currLen];
-
-        int readLineRes = readLineFromFile(fileDescriptor, line, currOffset, currLen);
-        if (readLineRes != SUCCESS_STATUS) {
-            return readLineRes;
-        }
-        int printLineRes = printLine(line, currLen);
-        if (printLineRes != SUCCESS_STATUS) {
-            return printLineRes;
+        int getCurrLineRes = getCurrLine(
+            fileDescriptor,
+            linesTable[lineIdx].offset,
+            linesTable[lineIdx].length
+        );
+        if (getCurrLineRes != SUCCESS_STATUS) {
+            return getCurrLineRes;
         }
     }
     return SUCCESS_STATUS;
@@ -182,31 +203,34 @@ int main(int argc, char *argv[]) {
         return WRONG_ARGUMENTS_NUMBER_ERROR;
     }
 
-    int linesOffsets[TABLE_SIZE]  = {0};
-    int linesLen[TABLE_SIZE]  = {0};
-    int linesTotal;
-
     int fileDescriptor = open(argv[1], O_RDONLY);
     if (fileDescriptor == FILE_OPEN_ERROR_VALUE) {
         perror("Error on file opening");
         return FILE_OPEN_ERROR;
     }
 
-    int fillTableRes = fillTable(fileDescriptor, linesOffsets, linesLen, &linesTotal);
+    TableRow *linesTable = (TableRow*) malloc(sizeof(TableRow) * INIT_TABLE_SIZE);
+    int linesTotal = INIT_TABLE_SIZE;
+
+    int fillTableRes = fillTable(fileDescriptor, &linesTable, &linesTotal);
     if (fillTableRes != SUCCESS_STATUS) {
+        free(linesTable);
         return fillTableRes;
     }
 
-    int getLinesRes = getLines(fileDescriptor, linesOffsets, linesLen, linesTotal);
+    int getLinesRes = getLines(fileDescriptor, linesTable, linesTotal);
     if (getLinesRes != SUCCESS_STATUS) {
+        free(linesTable);
         return getLinesRes;
     }
 
     int closeFileRes = close(fileDescriptor);
     if (closeFileRes == FILE_CLOSE_ERROR_VALUE) {
         perror("Error with closing the file");
+        free(linesTable);
         return FILE_CLOSE_ERROR;
     }
 
+    free(linesTable);
     return SUCCESS_STATUS;
 }
