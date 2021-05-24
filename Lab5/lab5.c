@@ -75,7 +75,7 @@ int fillTable(int fileDescriptor, TableRow **linesTable, int *linesTotal) {
 
 int convertStrToLineIdx(char *str, int strSize, long long *lineIdx, int linesTotal) {
     if (strnlen(str, strSize) == 0) {
-        fprintf(stderr, "Invalid number: string can't be empty\n");
+        fprintf(stderr, "Invalid line number: input value is empty\n");
         return INVALID_VALUE_ERROR;
     }
 
@@ -84,15 +84,15 @@ int convertStrToLineIdx(char *str, int strSize, long long *lineIdx, int linesTot
     *lineIdx = strtoll(str, &endPtr, DECIMAL_SYSTEM);
 
     if (strnlen(endPtr, strSize) != 0) {
-        fprintf(stderr, "Invalid number: string need to contain only digits\n");
+        fprintf(stderr, "Invalid line number: input value is not a number\n");
         return INVALID_VALUE_ERROR;
     }
     if (errno == ERANGE && (*lineIdx == LONG_MAX || *lineIdx == LONG_MIN)) {
-        perror("Invalid number");
+        perror("Invalid line number");
         return INVALID_VALUE_ERROR;
     }
     if (*lineIdx > linesTotal || *lineIdx < 0) {
-        fprintf(stderr, "Invalid number: no such line in file\n");
+        fprintf(stderr, "Invalid line number: no such line in file\n");
         return INVALID_VALUE_ERROR;
     }
     return SUCCESS_STATUS;
@@ -100,18 +100,21 @@ int convertStrToLineIdx(char *str, int strSize, long long *lineIdx, int linesTot
 
 int getLineIdx(long long *lineIdx, int linesTotal) {
     char askForNumberText[27] = "Please, enter line number: ";
-    char *inputValue = (char*) malloc(sizeof(char) * BUF_SIZE);
-    int inputIdx = 0;
 
     int writeRes = write(STDOUT_FILENO, askForNumberText, 27);
     if (writeRes == STDOUT_WRITE_ERROR_VALUE) {
         perror("Error on printing message for user");
         return STDOUT_WRITE_ERROR;
     }
+
+    char *inputValue = (char*) malloc(sizeof(char) * BUF_SIZE);
+    int inputIdx = 0;
+
     while (true) {
         int readRes = read(STDIN_FILENO, &inputValue[inputIdx], BUF_SIZE);
         if (readRes == FILE_READ_ERROR_VALUE) {
             perror("Error on reading line number");
+            free(inputValue);
             return FILE_READ_ERROR;
         }
         inputIdx += readRes;
@@ -119,17 +122,18 @@ int getLineIdx(long long *lineIdx, int linesTotal) {
             inputValue[inputIdx - 1] = TERMINAL_ZERO;
             break;
         }
-        char *tmp = (char*)realloc(inputValue, sizeof(char) * (inputIdx + BUF_SIZE));
+        char *tmp = (char*) realloc(inputValue, sizeof(char) * (inputIdx + BUF_SIZE));
         if (tmp == NULL) {
             perror("Error on realloc for input value");
+            free(inputValue);
             return MEMORY_REALLOCATION_ERROR;
         }
         inputValue = tmp;
     }
 
     int convertRes = convertStrToLineIdx(inputValue, inputIdx, lineIdx, linesTotal);
-    free(inputValue);
 
+    free(inputValue);
     return convertRes;
 }
 

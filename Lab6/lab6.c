@@ -25,7 +25,7 @@
 #define STDOUT_WRITE_ERROR_VALUE (-1)
 #define SELECT_ERROR_VALUE (-1)
 #define SELECT_NO_REACTION_VALUE (0)
-#define NO_FILE_DESCRIPTOR_VALUE (0)
+#define FD_NOT_SET_VALUE (0)
 
 #define LINE_END_SYMBOL ('\n')
 #define TERMINAL_ZERO ('\0')
@@ -35,7 +35,7 @@
 #define STOP_IDX (0)
 #define TIMEOUT_SEC (5)
 #define TIMEOUT_USEC (0)
-#define MAX_DP (1)
+#define MAX_FD (0)
 
 typedef struct TableRow {
     int length;
@@ -82,7 +82,7 @@ int fillTable(int fileDescriptor, TableRow **linesTable, int *linesTotal) {
 
 int convertStrToLineIdx(char *str, int strSize, long long *lineIdx, int linesTotal) {
     if (strnlen(str, strSize) == 0) {
-        fprintf(stderr, "Invalid number: string can't be empty\n");
+        fprintf(stderr, "Invalid line number: input value is empty\n");
         return INVALID_VALUE_ERROR;
     }
 
@@ -91,15 +91,15 @@ int convertStrToLineIdx(char *str, int strSize, long long *lineIdx, int linesTot
     *lineIdx = strtoll(str, &endPtr, DECIMAL_SYSTEM);
 
     if (strnlen(endPtr, strSize) != 0) {
-        fprintf(stderr, "Invalid number: string need to contain only digits\n");
+        fprintf(stderr, "Invalid line number: input value is not a number\n");
         return INVALID_VALUE_ERROR;
     }
     if (errno == ERANGE && (*lineIdx == LONG_MAX || *lineIdx == LONG_MIN)) {
-        perror("Invalid number");
+        perror("Invalid line number");
         return INVALID_VALUE_ERROR;
     }
     if (*lineIdx > linesTotal || *lineIdx < 0) {
-        fprintf(stderr, "Invalid number: no such line in file\n");
+        fprintf(stderr, "Invalid line number: no such line in file\n");
         return INVALID_VALUE_ERROR;
     }
     return SUCCESS_STATUS;
@@ -113,6 +113,7 @@ int getLineIdx(long long *lineIdx, int linesTotal) {
         int readRes = read(STDIN_FILENO, &inputValue[inputIdx], BUF_SIZE);
         if (readRes == FILE_READ_ERROR_VALUE) {
             perror("Error on reading line number");
+            free(inputValue);
             return FILE_READ_ERROR;
         }
         inputIdx += readRes;
@@ -123,14 +124,15 @@ int getLineIdx(long long *lineIdx, int linesTotal) {
         char *tmp = (char*) realloc(inputValue, sizeof(char) * (inputIdx + BUF_SIZE));
         if (tmp == NULL) {
             perror("Error on realloc for input value");
+            free(inputValue);
             return MEMORY_REALLOCATION_ERROR;
         }
         inputValue = tmp;
     }
 
     int convertRes = convertStrToLineIdx(inputValue, inputIdx, lineIdx, linesTotal);
-    free(inputValue);
 
+    free(inputValue);
     return convertRes;
 }
 
@@ -185,46 +187,43 @@ int printEntireFile(int fileDescriptor, TableRow *linesTable, int linesTotal) {
 }
 
 int waitForInputValue(bool *isInputValue) {
-    char timeoutInfoText[31] = "Five seconds to enter number: ";
+    char timeoutInfoText[35] = "Five seconds to enter line number: ";
     char timeoutText[26] = "\nTime is over. Your file:\n";
     fd_set readDescriptors;
     struct timeval timeout;
 
-    FD_ZERO(&readDescriptors);
-    FD_SET(STDIN_FILENO, &readDescriptors);
-
-    timeout.tv_sec = TIMEOUT_SEC;
-    timeout.tv_usec = TIMEOUT_USEC;
-
-    int writeRes = write(STDOUT_FILENO, timeoutInfoText, 31);
+    int writeRes = write(STDOUT_FILENO, timeoutInfoText, 35);
     if (writeRes == STDOUT_WRITE_ERROR_VALUE) {
         perror("Error on showing timeout info text");
         return STDOUT_WRITE_ERROR;
     }
 
-    int selectRes = select(MAX_DP, &readDescriptors, NULL, NULL, &timeout);
-    if (selectRes == SELECT_ERROR_VALUE) {
-        perror("Select error");
-        return SELECT_ERROR;
-    }
+    FD_ZERO(&readDescriptors);
+    FD_SET(STDIN_FILENO, &readDescriptors);
 
-    if (selectRes == SELECT_NO_REACTION_VALUE) {
-        writeRes = write(STDOUT_FILENO, timeoutText, 26);
-        if (writeRes == STDOUT_WRITE_ERROR_VALUE) {
-            perror("Can't print message for user");
-            return STDOUT_WRITE_ERROR;
+    do {
+        timeout.tv_sec = TIMEOUT_SEC;
+        timeout.tv_usec = TIMEOUT_USEC;
+
+        int selectRes = select(MAX_FD + 1, &readDescriptors, NULL, NULL, &timeout);
+        if (selectRes == SELECT_ERROR_VALUE) {
+            perror("Error on select");
+            return SELECT_ERROR;
         }
-        *isInputValue = false;
-        return SUCCESS_STATUS;
-    }
 
-    int fdCheckRes = FD_ISSET(STDIN_FILENO, &readDescriptors);
-    if (fdCheckRes != NO_FILE_DESCRIPTOR_VALUE) {
-        *isInputValue = true;
-        return SUCCESS_STATUS;
+        if (selectRes == SELECT_NO_REACTION_VALUE) {
+            writeRes = write(STDOUT_FILENO, timeoutText, 26);
+            if (writeRes == STDOUT_WRITE_ERROR_VALUE) {
+                perror("Error on printing timeout message");
+                return STDOUT_WRITE_ERROR;
+            }
+            *isInputValue = false;
+            return SUCCESS_STATUS;
+        }
     }
+    while (FD_ISSET(STDIN_FILENO, &readDescriptors) == FD_NOT_SET_VALUE);
 
-    *isInputValue = false;
+    *isInputValue = true;
     return SUCCESS_STATUS;
 }
 

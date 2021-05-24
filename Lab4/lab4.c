@@ -54,6 +54,15 @@ int addNode(ListNode **head, char *value, int valueLen) {
     return SUCCESS_STATUS;
 }
 
+void freeList(ListNode *head) {
+    ListNode *tmpNode;
+    while (head != NULL) {
+        tmpNode = head;
+        head = head->next;
+        free(tmpNode);
+    }
+}
+
 int readLine(char **line, int *lineLen) {
     int idx = 0;
     while (true) {
@@ -81,16 +90,6 @@ int readLine(char **line, int *lineLen) {
     return SUCCESS_STATUS;
 }
 
-void freeMemory(ListNode *head, char *line) {
-    ListNode *tmpNode;
-    while (head != NULL) {
-        tmpNode = head;
-        head = head->next;
-        free(tmpNode);
-    }
-    free(line);
-}
-
 int main() {
     // Выделение пямяти под строку, в которую будут
     // записываться данные из входного потока
@@ -105,7 +104,7 @@ int main() {
     ListNode *head, *tail;
     int initListRes = initList(&head, &tail);
     if (initListRes != SUCCESS_STATUS) {
-        freeMemory(head, line);
+        free(line);
         return initListRes;
     }
 
@@ -113,7 +112,8 @@ int main() {
     while (true) {
         int readLineRes = readLine(&line, &lineLen);
         if (readLineRes != SUCCESS_STATUS) {
-            freeMemory(head, line);
+            freeList(head);
+            free(line);
             return readLineRes;
         }
         if (line[0] == EXIT_SYMBOL) {
@@ -121,18 +121,20 @@ int main() {
         }
         int addNodeRes = addNode(&head, line, lineLen);
         if (addNodeRes != SUCCESS_STATUS) {
-            freeMemory(head, line);
+            freeList(head);
+            free(line);
             return addNodeRes;
         }
     }
 
     // Вывод списка
     for (ListNode *node = tail->prev; node != NULL; node = node->prev) {
-        fputs(node->value, stdout);
+        printf("%s", node->value);
     }
 
     // Очистка памяти
-    freeMemory(head, line);
+    freeList(head);
+    free(line);
 
     return SUCCESS_STATUS;
 }
