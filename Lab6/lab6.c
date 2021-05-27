@@ -25,7 +25,6 @@
 #define STDOUT_WRITE_ERROR_VALUE (-1)
 #define SELECT_ERROR_VALUE (-1)
 #define SELECT_NO_REACTION_VALUE (0)
-#define FD_NOT_SET_VALUE (0)
 
 #define LINE_END_SYMBOL ('\n')
 #define TERMINAL_ZERO ('\0')
@@ -220,8 +219,7 @@ int waitForInputValue(bool *isInputValue) {
             *isInputValue = false;
             return SUCCESS_STATUS;
         }
-    }
-    while (FD_ISSET(STDIN_FILENO, &readDescriptors) == FD_NOT_SET_VALUE);
+    } while (!FD_ISSET(STDIN_FILENO, &readDescriptors));
 
     *isInputValue = true;
     return SUCCESS_STATUS;

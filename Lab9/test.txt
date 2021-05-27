@@ -1,0 +1,8 @@
+string 0
+
+another test string
+operating systems course
+
+9 8 7 6 5 4 3 2 1
+
+end of file
