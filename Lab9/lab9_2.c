@@ -14,7 +14,8 @@
 
 #define REQUIRED_ARGS_NUMBER (2)
 
-int executeCommand(char *commandName, char *argv[]){
+
+int executeCommand(char *commandName, char *argv[]) {
     pid_t forkRes = fork();
     if (forkRes == FORK_ERROR_VALUE) {
         perror("Error on fork");
@@ -35,11 +36,11 @@ int waitForChildProcess() {
     pid_t waitRes = wait(&childReturnCode);
 
     if (waitRes == WAIT_ERROR_VALUE){
-        perror("Error on wait for child resurn code");
+        perror("Error on wait for child result code");
         return WAIT_ERROR;
     }
 
-    if (WIFSIGNALED(childReturnCode)){
+    if (WIFSIGNALED(childReturnCode)) {
         int signalInfo = WTERMSIG(childReturnCode);
         printf("Child process terminated with a signal: %d\n", signalInfo);
         return SUCCESS_STATUS;
@@ -51,7 +52,7 @@ int waitForChildProcess() {
     return SUCCESS_STATUS;
 }
 
-int main(int argc, char *argv[]){
+int main(int argc, char *argv[]) {
 
     if (argc != REQUIRED_ARGS_NUMBER) {
         fprintf(stderr, "Wrong arguments number\n");
@@ -65,14 +66,12 @@ int main(int argc, char *argv[]){
     printf("Output of specified file:\n");
 
     int executeCommandRes = executeCommand(commandName, commandArgv);
-    if (executeCommandRes != SUCCESS_STATUS){
-        fprintf(stderr, "Error on executing command %s", commandName);
+    if (executeCommandRes != SUCCESS_STATUS) {
         return executeCommandRes;
     }
 
     int waitingRes = waitForChildProcess();
     if (waitingRes != SUCCESS_STATUS) {
-        fprintf(stderr, "Error on waiting child process");
         return waitingRes;
     }
 

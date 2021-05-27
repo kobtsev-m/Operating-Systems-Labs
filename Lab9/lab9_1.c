@@ -12,7 +12,8 @@
 
 #define REQUIRED_ARGS_NUMBER (2)
 
-int executeCommand(char *commandName, char *argv[]){
+
+int executeCommand(char *commandName, char *argv[]) {
     pid_t forkRes = fork();
     if (forkRes == FORK_ERROR_VALUE) {
         perror("Error on fork");
@@ -26,7 +27,7 @@ int executeCommand(char *commandName, char *argv[]){
     return SUCCESS_STATUS;
 }
 
-int main(int argc, char *argv[]){
+int main(int argc, char *argv[]) {
 
     if (argc != REQUIRED_ARGS_NUMBER) {
         fprintf(stderr, "Wrong arguments number\n");
@@ -40,8 +41,7 @@ int main(int argc, char *argv[]){
     printf("Output of specified file:\n");
 
     int executeCommandRes = executeCommand(commandName, commandArgv);
-    if (executeCommandRes != SUCCESS_STATUS){
-        fprintf(stderr, "Error on executing command %s", commandName);
+    if (executeCommandRes != SUCCESS_STATUS) {
         return executeCommandRes;
     }
 
