@@ -26,6 +26,7 @@
 #define SELECT_ERROR_VALUE (-1)
 #define SELECT_NO_REACTION_VALUE (0)
 
+#define REQUIRED_ARGS_NUMBER (2)
 #define LINE_END_SYMBOL ('\n')
 #define TERMINAL_ZERO ('\0')
 #define DECIMAL_SYSTEM (10)
@@ -266,7 +267,7 @@ int getLines(int fileDescriptor, TableRow *linesTable, int linesTotal) {
 
 int main(int argc, char *argv[]) {
 
-    if (argc != 2) {
+    if (argc != REQUIRED_ARGS_NUMBER) {
         fprintf(stderr, "Wrong arguments number\n");
         return WRONG_ARGUMENTS_NUMBER_ERROR;
     }
@@ -283,22 +284,30 @@ int main(int argc, char *argv[]) {
     int fillTableRes = fillTable(fileDescriptor, &linesTable, &linesTotal);
     if (fillTableRes != SUCCESS_STATUS) {
         free(linesTable);
+        int closeFileRes = close(fileDescriptor);
+        if (closeFileRes == FILE_CLOSE_ERROR_VALUE) {
+            perror("Error on file closing");
+            return FILE_CLOSE_ERROR;
+        }
         return fillTableRes;
     }
 
     int getLinesRes = getLines(fileDescriptor, linesTable, linesTotal);
     if (getLinesRes != SUCCESS_STATUS) {
         free(linesTable);
+        int closeFileRes = close(fileDescriptor);
+        if (closeFileRes == FILE_CLOSE_ERROR_VALUE) {
+            perror("Error on file closing");
+            return FILE_CLOSE_ERROR;
+        }
         return getLinesRes;
     }
 
+    free(linesTable);
     int closeFileRes = close(fileDescriptor);
     if (closeFileRes == FILE_CLOSE_ERROR_VALUE) {
-        perror("Error with closing the file");
-        free(linesTable);
+        perror("Error on file closing");
         return FILE_CLOSE_ERROR;
     }
-
-    free(linesTable);
     return SUCCESS_STATUS;
 }
