@@ -26,7 +26,7 @@
 #define SELECT_ERROR_VALUE (-1)
 #define SELECT_NO_REACTION_VALUE (0)
 
-#define REQUIRED_ARGS_NUMBER (2)
+#define REQUIRED_ARGUMENTS_NUMBER (2)
 #define LINE_END_SYMBOL ('\n')
 #define TERMINAL_ZERO ('\0')
 #define DECIMAL_SYSTEM (10)
@@ -267,7 +267,7 @@ int getLines(int fileDescriptor, TableRow *linesTable, int linesTotal) {
 
 int main(int argc, char *argv[]) {
 
-    if (argc != REQUIRED_ARGS_NUMBER) {
+    if (argc != REQUIRED_ARGUMENTS_NUMBER) {
         fprintf(stderr, "Wrong arguments number\n");
         return WRONG_ARGUMENTS_NUMBER_ERROR;
     }
